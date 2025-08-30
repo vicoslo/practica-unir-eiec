@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # Servicio para la aplicación Node.js
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/mydatabase
+    networks:
+      - app-network
+
+  # Servicio para la base de datos MongoDB
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-network
+
+# Definición de la red y los volúmenes
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:

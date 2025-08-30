@@ -1,0 +1,13 @@
+{
+  "name": "mi-app-docker",
+  "version": "1.0.0",
+  "description": "Una sencilla app de Node.js con Docker y Docker Compose",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^6.0.12"
+  }
+}

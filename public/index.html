@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CRUD de Personas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        form input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        form button { grid-column: 1 / span 2; padding: 12px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+        #persona-list { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        #persona-list th, #persona-list td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        #persona-list th { background-color: #f2f2f2; }
+        .actions button { margin-right: 5px; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; }
+        .actions .edit-btn { background-color: #28a745; color: white; }
+        .actions .delete-btn { background-color: #dc3545; color: white; }
+        .persona-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gestor de Personas con Node.js y MongoDB</h1>
+        <hr>
+
+        <h2>Crear/Editar Persona</h2>
+        <form id="persona-form">
+            <input type="hidden" id="persona-id">
+            <input type="text" id="nombre" placeholder="Nombre" required>
+            <input type="text" id="apellido" placeholder="Apellido" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="url" id="foto-url" placeholder="URL de la foto">
+            <button type="submit">Guardar</button>
+        </form>
+
+        <hr>
+
+        <h2>Listado de Personas</h2>
+        <table id="persona-list">
+            <thead>
+                <tr>
+                    <th>Foto</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Email</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = '/api/personas';
+        const form = document.getElementById('persona-form');
+        const listBody = document.querySelector('#persona-list tbody');
+
+        // Función para obtener y mostrar la lista de personas
+        async function fetchPersonas() {
+            const response = await fetch(API_URL);
+            const personas = await response.json();
+            renderPersonas(personas);
+        }
+
+        // Función para renderizar el listado en la tabla
+        function renderPersonas(personas) {
+            listBody.innerHTML = ''; // Limpiar la tabla
+            personas.forEach(persona => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><img src="${persona.foto_url || 'https://via.placeholder.com/50'}" alt="${persona.nombre}" class="persona-img"></td>
+                    <td>${persona.nombre}</td>
+                    <td>${persona.apellido}</td>
+                    <td>${persona.email}</td>
+                    <td class="actions">
+                        <button class="edit-btn" data-id="${persona._id}">Editar</button>
+                        <button class="delete-btn" data-id="${persona._id}">Borrar</button>
+                    </td>
+                `;
+                listBody.appendChild(row);
+            });
+        }
+
+        // Manejar el envío del formulario (crear o editar)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('persona-id').value;
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                email: document.getElementById('email').value,
+                foto_url: document.getElementById('foto-url').value
+            };
+            
+            let response;
+            if (id) {
+                // Editar
+                response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                // Crear
+                response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            
+            if (response.ok) {
+                form.reset();
+                document.getElementById('persona-id').value = '';
+                fetchPersonas();
+            } else {
+                alert('Error al guardar la persona');
+            }
+        });
+
+        // Manejar los botones de editar y borrar
+        listBody.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('edit-btn')) {
+                const id = e.target.getAttribute('data-id');
+                const response = await fetch(`${API_URL}/${id}`);
+                const persona = await response.json();
+                
+                document.getElementById('persona-id').value = persona._id;
+                document.getElementById('nombre').value = persona.nombre;
+                document.getElementById('apellido').value = persona.apellido;
+                document.getElementById('email').value = persona.email;
+                document.getElementById('foto-url').value = persona.foto_url;
+            }
+
+            if (e.target.classList.contains('delete-btn')) {
+                const id = e.target.getAttribute('data-id');
+                if (confirm('¿Estás seguro de que quieres borrar esta persona?')) {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        fetchPersonas();
+                    } else {
+                        alert('Error al eliminar la persona');
+                    }
+                }
+            }
+        });
+
+        // Iniciar la carga inicial
+        fetchPersonas();
+    </script>
+</body>
+</html>
